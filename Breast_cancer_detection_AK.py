@@ -143,12 +143,15 @@ elif selected == "Dataset":
 elif selected == "About":
     st.title("ℹ️ About Ameerah's SmartPredict")
     st.markdown("""
-    **Ameerah's SmartPredict** is an intelligent diagnostic support tool designed to assist in early detection of breast cancer.  
-    It uses a deep learning model trained on aspirate characteristics and patient data to estimate the risk of malignancy.
+    **Ameerah's SmartPredict** is an intelligent diagnostic support tool built to enhance the early detection of breast cancer using advanced machine learning techniques.
+
+This application is specifically designed to support laboratory technicians in Nigeria, where there remains a significant gap in the integration of modern technology within diagnostic workflows.
+By leveraging patient data and aspirate characteristics, SmartPredict offers quick, reliable predictions to aid clinical decision-making — even in resource-limited settings.
     
      
     - Developed by Ameerah Kareem  
-  S  - Ideal for health tech demos, research, and awareness
+  Bridging the gap between traditional lab practices and smart diagnostic tools
+
     """)
 
 # ---------------- Footer ----------------
