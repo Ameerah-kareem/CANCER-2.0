@@ -4,6 +4,8 @@ from streamlit_option_menu import option_menu
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
+import seaborn as sns
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
@@ -12,46 +14,40 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import f1_score, accuracy_score
 
-# Load the dataset
+# Load dataset
 df = pd.read_csv("Downloads/Breast cancer dataset cleaned.csv")
 
 # Prepare features and target
 X = df.drop(columns=['Diagnosis'])
-Y = df['Diagnosis']
+y = df['Diagnosis']
 
-# Train/test split
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.15, random_state=42)
-
-# Standardize features
+# Split and scale
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.15, random_state=42)
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# Build model
-model = Sequential()
-model.add(Dense(16, activation='relu', input_shape=(X_train.shape[1],)))
-model.add(BatchNormalization())
-model.add(Dropout(0.2))
-model.add(Dense(8, activation='relu'))
-model.add(Dropout(0.2))
-model.add(Dense(1, activation='sigmoid'))
-
-# Compile model
+# Build the model
+model = Sequential([
+    Dense(16, activation='relu', input_shape=(X_train.shape[1],)),
+    BatchNormalization(),
+    Dropout(0.2),
+    Dense(8, activation='relu'),
+    Dropout(0.2),
+    Dense(1, activation='sigmoid')
+])
 model.compile(optimizer=Adam(learning_rate=0.0015), loss='binary_crossentropy', metrics=['accuracy'])
-
 early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-
-# Train model
 model.fit(X_train_scaled, y_train, epochs=100, batch_size=32, validation_split=0.15, verbose=0, callbacks=[early_stopping])
 
-# Prediction for test set
+# Evaluate on test
 y_pred = (model.predict(X_test_scaled) > 0.5).astype(int)
 test_accuracy = accuracy_score(y_test, y_pred)
 test_f1 = f1_score(y_test, y_pred)
 
-# Streamlit App
+# UI
 logo_path = r"Downloads/logo.png"
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Ameerah's SmartPredict", layout="wide")
 st.image(logo_path, use_column_width='auto')
 
 # Navigation menu
@@ -64,47 +60,52 @@ selected = option_menu(
     orientation="horizontal"
 )
 
+# ---------------- Home / Prediction Page ----------------
 if selected == "Home":
-    st.title("BreastGuard: Machine Learning-Based Breast Cancer Prediction System")
-    st.write("Please Input Corresponding Patient Data")
+    st.title("Ameerah's SmartPredict: A Machine Learning-Based Breast Cancer Prediction System")
+    st.markdown("Please input patient information to predict the likelihood of breast cancer.")
 
-    st.header('Patient Input Parameters')
+    st.markdown("### 👩‍⚕️ Patient Input Parameters")
 
-    def user_input_features():
-        Age = st.number_input('Enter Patient Age', min_value=1, max_value=120, step=1)
-        gender_options = {"Male": 0, "Female": 1}
-        Gender = st.selectbox('Gender', list(gender_options.keys()))
-        Gender = gender_options[Gender]
+    col1, col2 = st.columns(2)
 
-        laterality_options = {"Left": 1, "Right": 0}
-        laterality = st.selectbox('Laterality', list(laterality_options.keys()))
-        laterality = laterality_options[laterality]
+with col1:
+    Age = st.number_input('Patient Age', min_value=1, max_value=120)
+    Gender = st.selectbox('Gender', ['Male', 'Female'])
+    familial_cancer = st.selectbox('Family History of Cancer', ['No', 'Yes'])
 
-        lymph_node_options = {"No": 0, "Yes": 1}
-        Lymph_Node = st.selectbox('Lymph Node', list(lymph_node_options.keys()))
-        Lymph_Node = lymph_node_options[Lymph_Node]
+with col2:
+    Laterality = st.selectbox('Laterality', ['Left', 'Right'])
+    Lymph_Node = st.selectbox('Lymph Node', ['No', 'Yes'])
+    Tumor_shape = st.selectbox('Tumor Shape', 
+        ['lobulated_shape', 'nodular_shape', 'oval_shape', 'round_shape', 'stellate_shape'])
 
-        Nature_of_Aspirate = st.selectbox(
-            'Nature of Aspirate',
-            ["colloid_Aspirate", "creamy_Aspirate", "hemorrhagic_Aspirate",
-            "milky_Aspirate", "mucoid_Aspirate", "oily_Aspirate",
-            "proteinaceous_Aspirate", "sanguineous_Aspirate",
-            "serous_Aspirate", "turbid_Aspirate"]
-        )
+Nature_of_Aspirate = st.selectbox(
+    'Nature of Aspirate',
+    ["colloid_Aspirate", "creamy_Aspirate", "hemorrhagic_Aspirate",
+    "milky_Aspirate", "mucoid_Aspirate", "oily_Aspirate",
+    "proteinaceous_Aspirate", "sanguineous_Aspirate",
+    "serous_Aspirate", "turbid_Aspirate"]
+)
 
-        data = {
-            'Age': Age,
-            'Gender': Gender,
-            'laterality': laterality,
-            'Lymph_Node': Lymph_Node,
-            'Nature_of_Aspirate': Nature_of_Aspirate
-        }
 
-        features = pd.DataFrame(data, index=[0])
-        features = features.reindex(columns=X_train.columns, fill_value=0)
-        return features
+    gender_map = {"Male": 0, "Female": 1}
+    laterality_map = {"Left": 1, "Right": 0}
+    lymph_node_map = {"No": 0, "Yes": 1}
+    fam_cancer_map = {"No": 0, "Yes": 1}
+    
+    data = {
+    'Age': Age,
+    'Gender': gender_map[Gender],
+    'laterality': laterality_map[Laterality],
+    'Lymph_Node': lymph_node_map[Lymph_Node],
+    'Nature_of_Aspirate': Nature_of_Aspirate,
+    'familial_cancer': fam_cancer_map[familial_cancer],
+    'Tumor_shape': Tumor_shape
+    }
 
-    input_df = user_input_features()
+    input_df = pd.DataFrame(data, index=[0])
+    input_df = input_df.reindex(columns=X_train.columns, fill_value=0)
 
     if st.button('Submit'):
         input_scaled = scaler.transform(input_df)
@@ -112,32 +113,45 @@ if selected == "Home":
         prob_malignant = prediction[0][0]
         prob_benign = 1 - prob_malignant
 
-        st.subheader('Prediction')
+        st.subheader("🧬 Prediction Result")
 
-        if prob_malignant < 0.70 and prob_malignant > 0.5:
-            st.write("Most likely malignant, further testing advised.")
-        elif prob_malignant > 0.70:
-            st.write(f"Predicted Diagnosis: {'Malignant' if prob_malignant >= 0.5 else 'Benign'}")
+        if prob_malignant > 0.7:
+            st.error("🔴 High Risk of Malignancy — Please seek further testing.")
+        elif prob_malignant > 0.5:
+            st.warning("🟠 Moderate Risk — Clinical follow-up advised.")
+        elif prob_benign > 0.7:
+            st.success("🟢 Low Risk — Likely Benign.")
+        else:
+            st.info("🧭 Uncertain — Retesting may be necessary.")
 
-        if prob_benign < 0.70 and prob_benign > 0.5:
-            st.write("Most likely benign, further testing advised.")
-        elif prob_benign > 0.70:
-            st.write(f"Predicted Diagnosis: {'Benign' if prob_malignant < 0.5 else 'Malignant'}")
+        st.markdown("### 📊 Prediction Probability")
+        st.metric("Malignant Probability", f"{prob_malignant:.2%}")
+        st.metric("Benign Probability", f"{prob_benign:.2%}")
 
-        st.subheader('Prediction Probability')
-        st.write(f"Probability of Malignant: {prob_malignant:.2f}")
-        st.write(f"Probability of Benign: {prob_benign:.2f}")
-
+# ---------------- Dataset Page ----------------
 elif selected == "Dataset":
-    st.title("Dataset Preview")
-    st.write("Below is a preview of the breast cancer dataset used:")
+    st.title("📊 Dataset Preview")
+    st.write("Below is the dataset used to train the prediction model.")
     st.dataframe(df)
 
+    st.markdown("### 🧮 Class Distribution")
+    fig, ax = plt.subplots()
+    sns.set_style("whitegrid")
+    sns.countplot(x='Diagnosis', data=df, palette='pastel', ax=ax)
+    st.pyplot(fig)
+
+# ---------------- About Page ----------------
 elif selected == "About":
-    st.title("About BreastGuard")
-    st.write("""
-    BreastGuard is an intelligent diagnostic support system that uses deep learning
-    to assist medical professionals in predicting breast cancer from aspirate characteristics
-    and patient details. This application is built with TensorFlow and Streamlit for real-time
-    interaction and intuitive results visualization.
+    st.title("ℹ️ About Ameerah's SmartPredict")
+    st.markdown("""
+    **Ameerah's SmartPredict** is an intelligent diagnostic support tool designed to assist in early detection of breast cancer.  
+    It uses a deep learning model trained on aspirate characteristics and patient data to estimate the risk of malignancy.
+    
+     
+    - Developed by Ameerah Kareem  
+    - Ideal for health tech demos, research, and awareness
     """)
+
+# ---------------- Footer ----------------
+st.markdown("---")
+st.markdown("<center style='color: gray;'>Made with 💙 by Ameerah | Powered by Streamlit + TensorFlow</center>", unsafe_allow_html=True)
