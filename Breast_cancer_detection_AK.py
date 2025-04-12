@@ -46,9 +46,8 @@ test_accuracy = accuracy_score(y_test, y_pred)
 test_f1 = f1_score(y_test, y_pred)
 
 # UI
-logo_path = r"Downloads/logo.png"
-st.set_page_config(page_title="Ameerah's SmartPredict", layout="wide")
-st.image(logo_path, use_column_width='auto')
+logo_path = "images/image.jpeg"
+st.image(logo_path, use_container_width=True)
 
 # Navigation menu
 selected = option_menu(
@@ -149,7 +148,7 @@ elif selected == "About":
     
      
     - Developed by Ameerah Kareem  
-    - Ideal for health tech demos, research, and awareness
+  S  - Ideal for health tech demos, research, and awareness
     """)
 
 # ---------------- Footer ----------------
