@@ -68,64 +68,64 @@ if selected == "Home":
 
     col1, col2 = st.columns(2)
 
-with col1:
-    Age = st.number_input('Patient Age', min_value=1, max_value=120)
-    Gender = st.selectbox('Gender', ['Male', 'Female'])
-    familial_cancer = st.selectbox('Family History of Cancer', ['No', 'Yes'])
+    with col1:
+        Age = st.number_input('Patient Age', min_value=1, max_value=120)
+        Gender = st.selectbox('Gender', ['Male', 'Female'])
+        familial_cancer = st.selectbox('Family History of Cancer', ['No', 'Yes'])
 
-with col2:
-    Laterality = st.selectbox('Laterality', ['Left', 'Right'])
-    Lymph_Node = st.selectbox('Lymph Node', ['No', 'Yes'])
-    Tumor_shape = st.selectbox('Tumor Shape', 
-        ['lobulated_shape', 'nodular_shape', 'oval_shape', 'round_shape', 'stellate_shape'])
+    with col2:
+        Laterality = st.selectbox('Laterality', ['Left', 'Right'])
+        Lymph_Node = st.selectbox('Lymph Node', ['No', 'Yes'])
+        Tumor_shape = st.selectbox('Tumor Shape', 
+            ['lobulated_shape', 'nodular_shape', 'oval_shape', 'round_shape', 'stellate_shape'])
 
-Nature_of_Aspirate = st.selectbox(
-    'Nature of Aspirate',
-    ["colloid_Aspirate", "creamy_Aspirate", "hemorrhagic_Aspirate",
-    "milky_Aspirate", "mucoid_Aspirate", "oily_Aspirate",
-    "proteinaceous_Aspirate", "sanguineous_Aspirate",
-    "serous_Aspirate", "turbid_Aspirate"]
-)
+    Nature_of_Aspirate = st.selectbox(
+        'Nature of Aspirate',
+        ["colloid_Aspirate", "creamy_Aspirate", "hemorrhagic_Aspirate",
+        "milky_Aspirate", "mucoid_Aspirate", "oily_Aspirate",
+        "proteinaceous_Aspirate", "sanguineous_Aspirate",
+        "serous_Aspirate", "turbid_Aspirate"]
+    )
 
+    gender_map = {"Male": 0, "Female": 1}
+    laterality_map = {"Left": 1, "Right": 0}
+    lymph_node_map = {"No": 0, "Yes": 1}
+    fam_cancer_map = {"No": 0, "Yes": 1}
+        
+    data = {
+        'Age': Age,
+        'Gender': gender_map[Gender],
+        'laterality': laterality_map[Laterality],
+        'Lymph_Node': lymph_node_map[Lymph_Node],
+        'Nature_of_Aspirate': Nature_of_Aspirate,
+        'familial_cancer': fam_cancer_map[familial_cancer],
+        'Tumor_shape': Tumor_shape
+    }
 
-gender_map = {"Male": 0, "Female": 1}
-laterality_map = {"Left": 1, "Right": 0}
-lymph_node_map = {"No": 0, "Yes": 1}
-fam_cancer_map = {"No": 0, "Yes": 1}
-    
-data = {
-'Age': Age,
-'Gender': gender_map[Gender],
-'laterality': laterality_map[Laterality],
-'Lymph_Node': lymph_node_map[Lymph_Node],
-'Nature_of_Aspirate': Nature_of_Aspirate,
-'familial_cancer': fam_cancer_map[familial_cancer],
- 'Tumor_shape': Tumor_shape
- }
+    input_df = pd.DataFrame(data, index=[0])
+    input_df = input_df.reindex(columns=X_train.columns, fill_value=0)
 
-input_df = pd.DataFrame(data, index=[0])
-input_df = input_df.reindex(columns=X_train.columns, fill_value=0)
+    if st.button('Submit'):
+        input_scaled = scaler.transform(input_df)
+        prediction = model.predict(input_scaled)
+        prob_malignant = prediction[0][0]
+        prob_benign = 1 - prob_malignant
 
-if st.button('Submit'):
-    input_scaled = scaler.transform(input_df)
-    prediction = model.predict(input_scaled)
-    prob_malignant = prediction[0][0]
-    prob_benign = 1 - prob_malignant
+        st.subheader("🧬 Prediction Result")
 
-    st.subheader("🧬 Prediction Result")
+        if prob_malignant > 0.7:
+            st.error("🔴 High Risk of Malignancy — Please seek further testing.")
+        elif prob_malignant > 0.5:
+            st.warning("🟠 Moderate Risk — Clinical follow-up advised.")
+        elif prob_benign > 0.7:
+            st.success("🟢 Low Risk — Likely Benign.")
+        else:
+            st.info("🧭 Uncertain — Retesting may be necessary.")
 
-    if prob_malignant > 0.7:
-        st.error("🔴 High Risk of Malignancy — Please seek further testing.")
-    elif prob_malignant > 0.5:
-        st.warning("🟠 Moderate Risk — Clinical follow-up advised.")
-    elif prob_benign > 0.7:
-        st.success("🟢 Low Risk — Likely Benign.")
-    else:
-        st.info("🧭 Uncertain — Retesting may be necessary.")
+        st.markdown("### 📊 Prediction Probability")
+        st.metric("Malignant Probability", f"{prob_malignant:.2%}")
+        st.metric("Benign Probability", f"{prob_benign:.2%}")
 
-    st.markdown("### 📊 Prediction Probability")
-    st.metric("Malignant Probability", f"{prob_malignant:.2%}")
-    st.metric("Benign Probability", f"{prob_benign:.2%}")
 
 # ---------------- Dataset Page ----------------
 elif selected == "Dataset":
