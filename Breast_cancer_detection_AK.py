@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import f1_score, accuracy_score
 
 # Load dataset
-df = pd.read_csv("Downloads/Breast cancer dataset cleaned.csv")
+df = pd.read_csv("Breast_cancer_dataset_refined_2_0.csv")
 
 # Prepare features and target
 X = df.drop(columns=['Diagnosis'])
