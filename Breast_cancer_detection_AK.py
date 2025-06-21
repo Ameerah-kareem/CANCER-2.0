@@ -1,4 +1,3 @@
-
 import streamlit as st
 from streamlit_option_menu import option_menu
 import pandas as pd
@@ -6,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
+import base64
+from fpdf import FPDF
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
@@ -22,7 +23,7 @@ X = df.drop(columns=['Diagnosis'])
 y = df['Diagnosis']
 
 # Split and scale
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.15, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=42)
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
@@ -63,7 +64,6 @@ selected = option_menu(
 if selected == "Home":
     st.title("Ameerah's SmartPredict: A Machine Learning-Based Breast Cancer Prediction System")
     st.markdown("Please input patient information to predict the likelihood of breast cancer.")
-
     st.markdown("### 👩‍⚕️ Patient Input Parameters")
 
     col1, col2 = st.columns(2)
@@ -82,16 +82,16 @@ if selected == "Home":
     Nature_of_Aspirate = st.selectbox(
         'Nature of Aspirate',
         ["colloid_Aspirate", "creamy_Aspirate", "hemorrhagic_Aspirate",
-        "milky_Aspirate", "mucoid_Aspirate", "oily_Aspirate",
-        "proteinaceous_Aspirate", "sanguineous_Aspirate",
-        "serous_Aspirate", "turbid_Aspirate"]
+         "milky_Aspirate", "mucoid_Aspirate", "oily_Aspirate",
+         "proteinaceous_Aspirate", "sanguineous_Aspirate",
+         "serous_Aspirate", "turbid_Aspirate"]
     )
 
     gender_map = {"Male": 0, "Female": 1}
     laterality_map = {"Left": 1, "Right": 0}
     lymph_node_map = {"No": 0, "Yes": 1}
     fam_cancer_map = {"No": 0, "Yes": 1}
-        
+
     data = {
         'Age': Age,
         'Gender': gender_map[Gender],
@@ -104,6 +104,27 @@ if selected == "Home":
 
     input_df = pd.DataFrame(data, index=[0])
     input_df = input_df.reindex(columns=X_train.columns, fill_value=0)
+
+    def generate_pdf_report(user_input, prob_malignant, prob_benign):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="Breast Cancer Prediction Report", ln=True, align='C')
+        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(200, 10, txt="Patient Input:", ln=True)
+        pdf.set_font("Arial", size=11)
+        for key, value in user_input.items():
+            pdf.cell(200, 8, txt=f"{key}: {value}", ln=True)
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(200, 10, txt="Prediction Result:", ln=True)
+        pdf.set_font("Arial", size=11)
+        diagnosis = "Malignant" if prob_malignant > 0.5 else "Benign"
+        pdf.cell(200, 8, txt=f"Predicted Diagnosis: {diagnosis}", ln=True)
+        pdf.cell(200, 8, txt=f"Malignant Probability: {prob_malignant:.2%}", ln=True)
+        pdf.cell(200, 8, txt=f"Benign Probability: {prob_benign:.2%}", ln=True)
+        pdf.output("breast_cancer_report.pdf")
 
     if st.button('Submit'):
         input_scaled = scaler.transform(input_df)
@@ -126,6 +147,14 @@ if selected == "Home":
         st.metric("Malignant Probability", f"{prob_malignant:.2%}")
         st.metric("Benign Probability", f"{prob_benign:.2%}")
 
+        # Generate and provide PDF download
+        generate_pdf_report(data, prob_malignant, prob_benign)
+        with open("breast_cancer_report.pdf", "rb") as f:
+            b64_pdf = base64.b64encode(f.read()).decode("utf-8")
+            st.markdown(
+                f'<a href="data:application/pdf;base64,{b64_pdf}" download="BreastCancer_Report.pdf">📥 Download Prediction Report</a>',
+                unsafe_allow_html=True
+            )
 
 # ---------------- Dataset Page ----------------
 elif selected == "Dataset":
@@ -148,10 +177,8 @@ elif selected == "About":
 This application is specifically designed to support laboratory technicians in Nigeria, where there remains a significant gap in the integration of modern technology within diagnostic workflows.
 By leveraging patient data and aspirate characteristics, SmartPredict offers quick, reliable predictions to aid clinical decision-making — even in resource-limited settings.
     
-     
-    - Developed by Ameerah Kareem  
+- Developed by Ameerah Kareem  
   Bridging the gap between traditional lab practices and smart diagnostic tools
-
     """)
 
 # ---------------- Footer ----------------
